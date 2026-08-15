@@ -1,0 +1,99 @@
+-- Static Metrics for Users for Several Sites
+
+DECLARE @sql NVARCHAR(MAX);
+
+SELECT @sql = STUFF((
+    SELECT
+        CHAR(10) + 'UNION ALL' + CHAR(10) +
+        N'
+SELECT
+    ' + QUOTENAME(d.name, '''') + N' AS Site,
+
+    COUNT(*) AS UsersCount,
+    COUNT(DISTINCT AccountId) AS DistinctNetworkAccounts,
+
+    SUM(CAST(Reputation AS BIGINT)) AS TotalReputation,
+    AVG(CAST(Reputation AS FLOAT)) AS AvgReputation,
+    MIN(Reputation) AS MinReputation,
+    MAX(Reputation) AS MaxReputation,
+
+    SUM(CAST(Views AS BIGINT)) AS TotalProfileViews,
+    AVG(CAST(Views AS FLOAT)) AS AvgProfileViews,
+    MIN(Views) AS MinProfileViews,
+    MAX(Views) AS MaxProfileViews,
+
+    SUM(CAST(UpVotes AS BIGINT)) AS TotalUpVotesCast,
+    AVG(CAST(UpVotes AS FLOAT)) AS AvgUpVotesCast,
+    MIN(UpVotes) AS MinUpVotesCast,
+    MAX(UpVotes) AS MaxUpVotesCast,
+
+    SUM(CAST(DownVotes AS BIGINT)) AS TotalDownVotesCast,
+    AVG(CAST(DownVotes AS FLOAT)) AS AvgDownVotesCast,
+    MIN(DownVotes) AS MinDownVotesCast,
+    MAX(DownVotes) AS MaxDownVotesCast,
+
+    SUM(CAST(UpVotes AS BIGINT) + CAST(DownVotes AS BIGINT)) AS TotalVotesCast,
+    AVG(CAST(UpVotes + DownVotes AS FLOAT)) AS AvgVotesCast,
+    MIN(UpVotes + DownVotes) AS MinVotesCast,
+    MAX(UpVotes + DownVotes) AS MaxVotesCast,
+
+    SUM(CAST(UpVotes AS BIGINT) - CAST(DownVotes AS BIGINT)) AS NetVotesCast,
+    AVG(CAST(UpVotes - DownVotes AS FLOAT)) AS AvgNetVotesCast,
+    MIN(UpVotes - DownVotes) AS MinNetVotesCast,
+    MAX(UpVotes - DownVotes) AS MaxNetVotesCast,
+
+    CASE
+        WHEN SUM(CAST(DownVotes AS BIGINT)) = 0 THEN NULL
+        ELSE CAST(SUM(CAST(UpVotes AS BIGINT)) AS FLOAT)
+             / SUM(CAST(DownVotes AS BIGINT))
+    END AS UpvoteDownvoteRatio,
+
+    SUM(CASE WHEN WebsiteUrl IS NULL OR LTRIM(RTRIM(WebsiteUrl)) = '''' THEN 0 ELSE 1 END) AS UsersWithWebsite,
+    SUM(CASE WHEN WebsiteUrl IS NULL OR LTRIM(RTRIM(WebsiteUrl)) = '''' THEN 1 ELSE 0 END) AS UsersWithoutWebsite,
+
+    SUM(CASE WHEN AboutMe IS NULL OR LTRIM(RTRIM(AboutMe)) = '''' THEN 0 ELSE 1 END) AS UsersWithAboutMe,
+    SUM(CASE WHEN AboutMe IS NULL OR LTRIM(RTRIM(AboutMe)) = '''' THEN 1 ELSE 0 END) AS UsersWithoutAboutMe,
+
+    SUM(CASE WHEN ProfileImageUrl IS NULL OR LTRIM(RTRIM(ProfileImageUrl)) = '''' THEN 0 ELSE 1 END) AS UsersWithProfileImage,
+    SUM(CASE WHEN ProfileImageUrl IS NULL OR LTRIM(RTRIM(ProfileImageUrl)) = '''' THEN 1 ELSE 0 END) AS UsersWithoutProfileImage,
+
+    SUM(CASE WHEN AccountId IS NULL THEN 0 ELSE 1 END) AS UsersWithNetworkAccount,
+    SUM(CASE WHEN AccountId IS NULL THEN 1 ELSE 0 END) AS UsersWithoutNetworkAccount
+
+FROM ' + QUOTENAME(d.name) + N'..Users
+'
+    FROM sys.databases d
+    WHERE d.name IN (
+        'StackExchange.Ai',
+        'StackExchange.Astronomy',
+        'StackExchange.Computergraphics',
+        'StackExchange.Cs',
+        'StackExchange.Cseducators',
+        'StackExchange.Cstheory',
+        'StackExchange.Datascience',
+        'StackExchange.Earthscience',
+        'StackExchange.Engineering',
+        'StackExchange.Genai',
+        'StackExchange.Math',
+        'StackExchange.Matheducators',
+        'StackExchange.Mathoverflow',
+        'StackExchange.Physics',
+        'StackExchange.Quant',
+        'StackExchange.Quantumcomputing',
+        'StackExchange.Robotics',
+        'StackExchange.Scicomp',
+        'StackExchange.Stats',
+        'StackExchange.Tex',
+        'StackOverflow'
+    )
+    ORDER BY d.name
+    FOR XML PATH(''), TYPE
+).value('.', 'NVARCHAR(MAX)'), 1, 11, '');
+
+SET @sql = @sql + N'
+ORDER BY
+    UsersCount DESC,
+    Site;
+';
+
+EXEC(@sql);

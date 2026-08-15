@@ -1,0 +1,109 @@
+DECLARE @sql NVARCHAR(MAX);
+
+SELECT @sql = STUFF((
+    SELECT
+        CHAR(10) + 'UNION ALL' + CHAR(10) +
+        N'
+SELECT
+    ' + QUOTENAME(d.name, '''') + N' AS Site,
+    DATEFROMPARTS(YEAR(CreationDate), MONTH(CreationDate), 1) AS CreationMonth,
+
+    COUNT(*) AS UsersCount,
+    COUNT(DISTINCT AccountId) AS DistinctNetworkAccounts,
+
+    SUM(Reputation) AS TotalReputation,
+    AVG(CAST(Reputation AS FLOAT)) AS AvgReputation,
+    MIN(Reputation) AS MinReputation,
+    MAX(Reputation) AS MaxReputation,
+    STDEV(CAST(Reputation AS FLOAT)) AS StdReputation,
+
+    SUM(Views) AS TotalProfileViews,
+    AVG(CAST(Views AS FLOAT)) AS AvgProfileViews,
+    MIN(Views) AS MinProfileViews,
+    MAX(Views) AS MaxProfileViews,
+
+    SUM(UpVotes) AS TotalUpVotesCast,
+    AVG(CAST(UpVotes AS FLOAT)) AS AvgUpVotesCast,
+    MIN(UpVotes) AS MinUpVotesCast,
+    MAX(UpVotes) AS MaxUpVotesCast,
+
+    SUM(DownVotes) AS TotalDownVotesCast,
+    AVG(CAST(DownVotes AS FLOAT)) AS AvgDownVotesCast,
+    MIN(DownVotes) AS MinDownVotesCast,
+    MAX(DownVotes) AS MaxDownVotesCast,
+
+    SUM(UpVotes + DownVotes) AS TotalVotesCast,
+    AVG(CAST(UpVotes + DownVotes AS FLOAT)) AS AvgVotesCast,
+    MIN(UpVotes + DownVotes) AS MinVotesCast,
+    MAX(UpVotes + DownVotes) AS MaxVotesCast,
+
+    SUM(UpVotes - DownVotes) AS NetVotesCast,
+    AVG(CAST(UpVotes - DownVotes AS FLOAT)) AS AvgNetVotesCast,
+    MIN(UpVotes - DownVotes) AS MinNetVotesCast,
+    MAX(UpVotes - DownVotes) AS MaxNetVotesCast,
+
+    CASE
+        WHEN SUM(DownVotes) = 0 THEN NULL
+        ELSE CAST(SUM(UpVotes) AS FLOAT) / SUM(DownVotes)
+    END AS UpvoteDownvoteRatio,
+
+    AVG(CAST(DATEDIFF(DAY, CreationDate, GETDATE()) AS FLOAT)) AS AvgAccountAgeDays,
+    MIN(DATEDIFF(DAY, CreationDate, GETDATE())) AS MinAccountAgeDays,
+    MAX(DATEDIFF(DAY, CreationDate, GETDATE())) AS MaxAccountAgeDays,
+
+    AVG(CAST(DATEDIFF(DAY, LastAccessDate, GETDATE()) AS FLOAT)) AS AvgDaysSinceLastAccess,
+    MIN(DATEDIFF(DAY, LastAccessDate, GETDATE())) AS MinDaysSinceLastAccess,
+    MAX(DATEDIFF(DAY, LastAccessDate, GETDATE())) AS MaxDaysSinceLastAccess,
+
+    SUM(CASE WHEN WebsiteUrl IS NULL OR LTRIM(RTRIM(WebsiteUrl)) = '''' THEN 0 ELSE 1 END) AS UsersWithWebsite,
+    SUM(CASE WHEN WebsiteUrl IS NULL OR LTRIM(RTRIM(WebsiteUrl)) = '''' THEN 1 ELSE 0 END) AS UsersWithoutWebsite,
+
+    SUM(CASE WHEN AboutMe IS NULL OR LTRIM(RTRIM(AboutMe)) = '''' THEN 0 ELSE 1 END) AS UsersWithAboutMe,
+    SUM(CASE WHEN AboutMe IS NULL OR LTRIM(RTRIM(AboutMe)) = '''' THEN 1 ELSE 0 END) AS UsersWithoutAboutMe,
+
+    SUM(CASE WHEN ProfileImageUrl IS NULL OR LTRIM(RTRIM(ProfileImageUrl)) = '''' THEN 0 ELSE 1 END) AS UsersWithProfileImage,
+    SUM(CASE WHEN ProfileImageUrl IS NULL OR LTRIM(RTRIM(ProfileImageUrl)) = '''' THEN 1 ELSE 0 END) AS UsersWithoutProfileImage,
+
+    SUM(CASE WHEN AccountId IS NULL THEN 0 ELSE 1 END) AS UsersWithNetworkAccount,
+    SUM(CASE WHEN AccountId IS NULL THEN 1 ELSE 0 END) AS UsersWithoutNetworkAccount
+
+FROM ' + QUOTENAME(d.name) + N'..Users
+
+GROUP BY
+    DATEFROMPARTS(YEAR(CreationDate), MONTH(CreationDate), 1)
+'
+    FROM sys.databases d
+    WHERE d.name IN (
+        'StackExchange.Ai',
+        'StackExchange.Astronomy',
+        'StackExchange.Computergraphics',
+        'StackExchange.Cs',
+        'StackExchange.Cseducators',
+        'StackExchange.Cstheory',
+        'StackExchange.Datascience',
+        'StackExchange.Earthscience',
+        'StackExchange.Engineering',
+        'StackExchange.Genai',
+        'StackExchange.Math',
+        'StackExchange.Matheducators',
+        'StackExchange.Mathoverflow',
+        'StackExchange.Physics',
+        'StackExchange.Quant',
+        'StackExchange.Quantumcomputing',
+        'StackExchange.Robotics',
+        'StackExchange.Scicomp',
+        'StackExchange.Stats',
+        'StackExchange.Tex',
+        'StackOverflow'
+    )
+    ORDER BY d.name
+    FOR XML PATH(''), TYPE
+).value('.', 'NVARCHAR(MAX)'), 1, 11, '');
+
+SET @sql = @sql + N'
+ORDER BY
+    CreationMonth DESC,
+    Site;
+';
+
+EXEC(@sql);

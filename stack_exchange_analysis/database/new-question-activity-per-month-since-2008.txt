@@ -1,0 +1,10 @@
+https://data.stackexchange.com/stackoverflow/query/1717975/new-question-activity-per-month-since-2018#graph
+
+SELECT
+  DATEFROMPARTS(YEAR(P.CreationDate), MONTH(P.CreationDate), 1) AS Date,
+  COUNT(*) AS NewQuestions
+FROM Posts P
+WHERE P.PostTypeId = 1 -- Questions
+  AND YEAR(P.CreationDate) >= 2018
+GROUP BY DATEFROMPARTS(YEAR(P.CreationDate), MONTH(P.CreationDate), 1)
+ORDER BY Date

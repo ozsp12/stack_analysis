@@ -1,0 +1,13 @@
+https://data.stackexchange.com/stackoverflow/query/1717973/new-answers-per-month-since-2018#graph
+
+SELECT
+  DATEFROMPARTS(YEAR(P.CreationDate), MONTH(P.CreationDate), 1) AS Date,
+  CASE WHEN P.DeletionDate IS NULL THEN 'non-deleted' ELSE 'deleted' END AS Status,
+  COUNT(*) AS NewAnswers
+FROM PostsWithDeleted P
+WHERE P.PostTypeId = 2 -- Answers
+  AND YEAR(P.CreationDate) >= 2018
+GROUP BY
+  DATEFROMPARTS(YEAR(P.CreationDate), MONTH(P.CreationDate), 1),
+  CASE WHEN P.DeletionDate IS NULL THEN 'non-deleted' ELSE 'deleted' END
+ORDER BY Date

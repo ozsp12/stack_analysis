@@ -1,0 +1,9 @@
+SELECT
+    name AS DatabaseName
+FROM sys.databases
+WHERE
+    name = 'StackOverflow'
+    OR name LIKE 'StackExchange.%'
+    OR name LIKE 'StackOverflow.%'
+ORDER BY
+    name;

@@ -1,0 +1,46 @@
+WITH MonthlyVotes AS (
+    SELECT
+        t.TagName,
+        DATEFROMPARTS(YEAR(v.CreationDate), MONTH(v.CreationDate), 1) AS VoteMonth,
+
+        SUM(CASE WHEN v.VoteTypeId = 2 THEN 1 ELSE 0 END) AS Upvotes,
+        SUM(CASE WHEN v.VoteTypeId = 3 THEN 1 ELSE 0 END) AS Downvotes
+
+    FROM Votes v
+        JOIN Posts p ON v.PostId = p.Id
+        JOIN PostTags pt ON p.Id = pt.PostId
+        JOIN Tags t ON pt.TagId = t.Id
+
+    GROUP BY
+        t.TagName,
+        DATEFROMPARTS(YEAR(v.CreationDate), MONTH(v.CreationDate), 1)
+),
+
+FinalTable AS (
+    SELECT
+        ROW_NUMBER() OVER (ORDER BY VoteMonth DESC, TagName ASC) AS RowNumber,
+        TagName,
+        VoteMonth,
+        Upvotes,
+        Downvotes,
+        Upvotes + Downvotes AS TotalVotes,
+        Upvotes - Downvotes AS NetVotes,
+        CASE
+            WHEN Downvotes = 0 THEN NULL
+            ELSE CAST(Upvotes AS FLOAT) / Downvotes
+        END AS UpvoteDownvoteRatio
+    FROM MonthlyVotes
+)
+
+SELECT
+    RowNumber,
+    TagName,
+    VoteMonth,
+    Upvotes,
+    Downvotes,
+    TotalVotes,
+    NetVotes,
+    UpvoteDownvoteRatio
+FROM FinalTable
+WHERE RowNumber <= 50000 -- RowNumber > 50000
+ORDER BY RowNumber;

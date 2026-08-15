@@ -1,0 +1,10 @@
+SELECT
+  CAST(P.CreationDate AS date) AS [Date],
+  COUNT(*) AS NewQuestions
+FROM Posts P
+WHERE P.PostTypeId = 1 -- Questions
+  AND P.CreationDate >= '2000-01-01'
+GROUP BY
+  CAST(P.CreationDate AS date)
+ORDER BY
+  [Date];

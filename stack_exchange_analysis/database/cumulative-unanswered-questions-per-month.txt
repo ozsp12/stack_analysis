@@ -1,0 +1,166 @@
+https://data.stackexchange.com/pt/query/1948078/cumulative-unanswered-questions-per-month#resultSets
+
+-- Cumulative unanswered questions per month for a Stack Exchange site in SEDE
+--
+-- Series included:
+--   * CumulativeUnansweredQuestions      = no accepted answer and no positively-scored answer
+--   * CumulativeNoAnswersAtAll           = no answers at all
+--   * NewQuestions
+--   * NewlyAnsweredQuestions             = first month question stops being "unanswered"
+--   * NewlyGotFirstAnswer                = first month question gets any answer
+--   * NetChangeInUnanswered
+--   * NetChangeInNoAnswersAtAll
+--
+-- Notes:
+--   * "Unanswered" here uses the earlier of:
+--       1) accepted answer creation date
+--       2) first answer creation date whose current Score > 0
+--   * "No answers at all" uses the first answer creation date regardless of score.
+--   * SEDE stores current answer scores, not historical score-by-date snapshots.
+--     So Score > 0 is based on the answer's score today.
+
+DECLARE @StartDate date = '2016-08-01';
+
+WITH Questions AS (
+    SELECT
+        q.Id,
+        DATEFROMPARTS(YEAR(q.CreationDate), MONTH(q.CreationDate), 1) AS CreatedMonth,
+        aa.CreationDate AS AcceptedAnswerDate,
+        pa.FirstPositiveAnswerDate,
+        fa.FirstAnyAnswerDate
+    FROM Posts AS q
+    LEFT JOIN Posts AS aa
+        ON aa.Id = q.AcceptedAnswerId
+       AND aa.PostTypeId = 2
+    LEFT JOIN (
+        SELECT
+            a.ParentId,
+            MIN(a.CreationDate) AS FirstAnyAnswerDate
+        FROM Posts AS a
+        WHERE a.PostTypeId = 2
+        GROUP BY a.ParentId
+    ) AS fa
+        ON fa.ParentId = q.Id
+    LEFT JOIN (
+        SELECT
+            a.ParentId,
+            MIN(a.CreationDate) AS FirstPositiveAnswerDate
+        FROM Posts AS a
+        WHERE a.PostTypeId = 2
+          AND a.Score > 0
+        GROUP BY a.ParentId
+    ) AS pa
+        ON pa.ParentId = q.Id
+    WHERE q.PostTypeId = 1
+      AND q.CreationDate >= @StartDate
+),
+QuestionLifecycle AS (
+    SELECT
+        CreatedMonth,
+        FirstAnyAnswerDate,
+        CASE
+            WHEN AcceptedAnswerDate IS NULL THEN FirstPositiveAnswerDate
+            WHEN FirstPositiveAnswerDate IS NULL THEN AcceptedAnswerDate
+            WHEN AcceptedAnswerDate < FirstPositiveAnswerDate THEN AcceptedAnswerDate
+            ELSE FirstPositiveAnswerDate
+        END AS FirstAnsweredDate
+    FROM Questions
+),
+MonthlyAsked AS (
+    SELECT
+        CreatedMonth AS MonthStart,
+        COUNT(*) AS NewQuestions
+    FROM QuestionLifecycle
+    GROUP BY CreatedMonth
+),
+MonthlyAnswered AS (
+    SELECT
+        DATEFROMPARTS(YEAR(FirstAnsweredDate), MONTH(FirstAnsweredDate), 1) AS MonthStart,
+        COUNT(*) AS NewlyAnsweredQuestions
+    FROM QuestionLifecycle
+    WHERE FirstAnsweredDate IS NOT NULL
+    GROUP BY DATEFROMPARTS(YEAR(FirstAnsweredDate), MONTH(FirstAnsweredDate), 1)
+),
+MonthlyFirstAnswer AS (
+    SELECT
+        DATEFROMPARTS(YEAR(FirstAnyAnswerDate), MONTH(FirstAnyAnswerDate), 1) AS MonthStart,
+        COUNT(*) AS NewlyGotFirstAnswer
+    FROM QuestionLifecycle
+    WHERE FirstAnyAnswerDate IS NOT NULL
+    GROUP BY DATEFROMPARTS(YEAR(FirstAnyAnswerDate), MONTH(FirstAnyAnswerDate), 1)
+),
+MonthlyUnansweredDeltas AS (
+    SELECT
+        MonthStart,
+        NewQuestions AS Delta
+    FROM MonthlyAsked
+
+    UNION ALL
+
+    SELECT
+        MonthStart,
+        -NewlyAnsweredQuestions AS Delta
+    FROM MonthlyAnswered
+),
+MonthlyNoAnswersDeltas AS (
+    SELECT
+        MonthStart,
+        NewQuestions AS Delta
+    FROM MonthlyAsked
+
+    UNION ALL
+
+    SELECT
+        MonthStart,
+        -NewlyGotFirstAnswer AS Delta
+    FROM MonthlyFirstAnswer
+),
+CollapsedUnansweredDeltas AS (
+    SELECT
+        MonthStart,
+        SUM(Delta) AS NetChangeInUnanswered
+    FROM MonthlyUnansweredDeltas
+    GROUP BY MonthStart
+),
+CollapsedNoAnswersDeltas AS (
+    SELECT
+        MonthStart,
+        SUM(Delta) AS NetChangeInNoAnswersAtAll
+    FROM MonthlyNoAnswersDeltas
+    GROUP BY MonthStart
+),
+Months AS (
+    SELECT DATEFROMPARTS(YEAR(@StartDate), MONTH(@StartDate), 1) AS MonthStart
+    UNION ALL
+    SELECT DATEADD(month, 1, MonthStart)
+    FROM Months
+    WHERE MonthStart < DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
+)
+SELECT
+    m.MonthStart,
+    SUM(ISNULL(u.NetChangeInUnanswered, 0)) OVER (
+        ORDER BY m.MonthStart
+        ROWS UNBOUNDED PRECEDING
+    ) AS CumulativeUnansweredQuestions,
+    SUM(ISNULL(n.NetChangeInNoAnswersAtAll, 0)) OVER (
+        ORDER BY m.MonthStart
+        ROWS UNBOUNDED PRECEDING
+    ) AS CumulativeNoAnswersAtAll,
+    ISNULL(a.NewQuestions, 0) AS NewQuestions,
+    ISNULL(ans.NewlyAnsweredQuestions, 0) AS NewlyAnsweredQuestions,
+    ISNULL(fa.NewlyGotFirstAnswer, 0) AS NewlyGotFirstAnswer,
+    ISNULL(u.NetChangeInUnanswered, 0) AS NetChangeInUnanswered,
+    ISNULL(n.NetChangeInNoAnswersAtAll, 0) AS NetChangeInNoAnswersAtAll
+FROM Months AS m
+LEFT JOIN MonthlyAsked AS a
+    ON a.MonthStart = m.MonthStart
+LEFT JOIN MonthlyAnswered AS ans
+    ON ans.MonthStart = m.MonthStart
+LEFT JOIN MonthlyFirstAnswer AS fa
+    ON fa.MonthStart = m.MonthStart
+LEFT JOIN CollapsedUnansweredDeltas AS u
+    ON u.MonthStart = m.MonthStart
+LEFT JOIN CollapsedNoAnswersDeltas AS n
+    ON n.MonthStart = m.MonthStart
+ORDER BY m.MonthStart
+OPTION (MAXRECURSION 0);

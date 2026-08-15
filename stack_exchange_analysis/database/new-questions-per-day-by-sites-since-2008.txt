@@ -1,0 +1,156 @@
+SELECT
+    Day,
+
+    SUM(CASE WHEN Site = 'StackExchange.Ai' THEN 1 ELSE 0 END) AS AiQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Astronomy' THEN 1 ELSE 0 END) AS AstronomyQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Computergraphics' THEN 1 ELSE 0 END) AS ComputerGraphicsQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Cs' THEN 1 ELSE 0 END) AS ComputerScienceQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Cseducators' THEN 1 ELSE 0 END) AS CsEducatorsQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Cstheory' THEN 1 ELSE 0 END) AS CsTheoryQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Datascience' THEN 1 ELSE 0 END) AS DataScienceQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Earthscience' THEN 1 ELSE 0 END) AS EarthScienceQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Engineering' THEN 1 ELSE 0 END) AS EngineeringQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Genai' THEN 1 ELSE 0 END) AS GenAIQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Math' THEN 1 ELSE 0 END) AS MathematicsQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Matheducators' THEN 1 ELSE 0 END) AS MathEducatorsQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Mathoverflow' THEN 1 ELSE 0 END) AS MathOverflowQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Physics' THEN 1 ELSE 0 END) AS PhysicsQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Quant' THEN 1 ELSE 0 END) AS QuantQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Quantumcomputing' THEN 1 ELSE 0 END) AS QuantumComputingQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Robotics' THEN 1 ELSE 0 END) AS RoboticsQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Scicomp' THEN 1 ELSE 0 END) AS ScientificComputingQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Stats' THEN 1 ELSE 0 END) AS StatisticsQuestions,
+    SUM(CASE WHEN Site = 'StackExchange.Tex' THEN 1 ELSE 0 END) AS TeXQuestions,
+    SUM(CASE WHEN Site = 'StackOverflow' THEN 1 ELSE 0 END) AS StackOverflowQuestions
+
+FROM (
+    SELECT 'StackExchange.Ai' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Ai]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Astronomy' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Astronomy]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Computergraphics' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Computergraphics]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Cs' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Cs]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Cseducators' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Cseducators]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Cstheory' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Cstheory]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Datascience' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Datascience]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Earthscience' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Earthscience]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Engineering' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Engineering]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Genai' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Genai]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Math' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Math]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Matheducators' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Matheducators]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Mathoverflow' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Mathoverflow]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Physics' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Physics]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Quant' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Quant]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Quantumcomputing' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Quantumcomputing]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Robotics' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Robotics]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Scicomp' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Scicomp]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Stats' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Stats]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackExchange.Tex' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackExchange.Tex]..Posts
+    WHERE PostTypeId = 1
+
+    UNION ALL
+
+    SELECT 'StackOverflow' AS Site, CAST(CreationDate AS date) AS Day
+    FROM [StackOverflow]..Posts
+    WHERE PostTypeId = 1
+) q
+
+GROUP BY
+    Day
+
+ORDER BY
+    Day;
