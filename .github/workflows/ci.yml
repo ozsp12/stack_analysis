@@ -1,6 +1,8 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -8,39 +10,31 @@ permissions:
   contents: read
 
 jobs:
-  inspect-workbook:
+  analysis:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      - run: python -m pip install openpyxl pandas
-      - name: Export workbook data
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          import pandas as pd
-          from openpyxl import load_workbook
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
 
-          source = Path('stack_exchange_analysis/analysis/cumulative-answers-questions-stackexchange.xlsx')
-          output = Path('cumulative-answers-questions-stackexchange.csv')
-          df = pd.read_excel(source, sheet_name='QueryResults')
-          df.to_csv(output, index=False, date_format='%Y-%m-%d')
-          print(df.head().to_string(index=False))
-          print(df.tail().to_string(index=False))
-          print('shape=', df.shape)
+      - name: Check analysis classes
+        run: python -m compileall -q analysis_scripts
 
-          wb = load_workbook(source, data_only=False)
-          ws = wb['QueryResults']
-          for i, chart in enumerate(ws._charts, 1):
-              print('chart', i, type(chart).__name__)
-              for j, ser in enumerate(chart.ser, 1):
-                  print('series', j, 'title=', ser.tx.strRef.f if ser.tx and ser.tx.strRef else None,
-                        'categories=', ser.cat.numRef.f if ser.cat and ser.cat.numRef else None,
-                        'values=', ser.val.numRef.f if ser.val and ser.val.numRef else None)
-          PY
-      - uses: actions/upload-artifact@v4
-        with:
-          name: workbook-export
-          path: cumulative-answers-questions-stackexchange.csv
+      - name: Execute descriptive analysis notebook
+        run: |
+          jupyter nbconvert \
+            --to notebook \
+            --execute notebooks/descriptive_analysis.ipynb \
+            --ExecutePreprocessor.timeout=600 \
+            --output /tmp/descriptive_analysis.ipynb
