@@ -1,3 +1,5 @@
 from .descriptive_analysis import StackExchangeDescriptiveAnalysis
 
-__all__ = ["StackExchangeDescriptiveAnalysis"]
+analysis = StackExchangeDescriptiveAnalysis()
+
+__all__ = ["StackExchangeDescriptiveAnalysis", "analysis"]
