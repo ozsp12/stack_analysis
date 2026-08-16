@@ -15,7 +15,7 @@ line-length = 100
 src = ["stack_exchange_analysis/src", "scripts", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM"]
+select = ["E", "F", "UP", "B", "SIM"]
 ignore = []
 
 [tool.ruff.format]
