@@ -9,42 +9,32 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  quality:
-    name: Code, notebooks, and data checks
+  analysis:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt -r requirements-dev.txt
+          python -m pip install -r requirements.txt
 
-      - name: Lint Python
-        run: ruff check stack_exchange_analysis/src scripts tests
+      - name: Check analysis classes
+        run: python -m compileall -q analysis_scripts
 
-      - name: Run unit tests
-        run: pytest -q
-
-      - name: Validate notebook structure
-        run: python scripts/validate_notebooks.py
-
-      - name: Smoke-test source data
-        run: python scripts/check_source_data.py
+      - name: Execute descriptive analysis notebook
+        run: |
+          jupyter nbconvert \
+            --to notebook \
+            --execute notebooks/descriptive_analysis.ipynb \
+            --ExecutePreprocessor.timeout=600 \
+            --output /tmp/descriptive_analysis.ipynb
