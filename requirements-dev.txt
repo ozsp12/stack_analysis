@@ -1,0 +1,3 @@
+nbclient>=0.10
+pytest>=8.0
+ruff>=0.6
