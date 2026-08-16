@@ -1,4 +1,4 @@
-# Stack Exchange activity analysis
+# Stack Exchange Activity Analysis
 
 Investigative data analysis of long-run activity on Stack Overflow and selected Stack Exchange sites. The immediate objective is descriptive and diagnostic: establish what changed, when it changed, and which dimensions of community activity moved together before introducing causal explanations.
 
@@ -35,11 +35,26 @@ Filename labels are not sufficient provenance. Some exports have temporal labels
 
 The current user-by-month export is grouped by user account creation month. It measures registration cohorts, not monthly active users. Likewise, the current tag table is a snapshot rather than a historical count of questions by tag.
 
+See [`../docs/data_provenance.md`](../docs/data_provenance.md) and [`../docs/analysis_conventions.md`](../docs/analysis_conventions.md) for the formal project policies.
+
 ## Execution
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt -r requirements-dev.txt
 jupyter lab
 ```
 
 Run notebooks in numerical order. They resolve paths from either the repository root or the `notebooks/` directory.
+
+## Automation
+
+The repository has two GitHub Actions workflows:
+
+- `CI` checks Python linting, unit tests, notebook structure, and source-data readability on pull requests and pushes to `main`.
+- `Analysis Pipeline` executes all investigative notebooks after relevant changes reach `main`, renders them to HTML, and uploads both executed notebooks and HTML reports as workflow artifacts.
+
+The local equivalent of the CI quality gate is:
+
+```bash
+make check
+```
