@@ -1,0 +1,10 @@
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
+stack_exchange_analysis/analysis/*.png
+stack_exchange_analysis/analysis/data_file_inventory.csv
+stack_exchange_analysis/analysis/data_quality_profile.csv
+stack_exchange_analysis/analysis/query_provenance_audit.csv
