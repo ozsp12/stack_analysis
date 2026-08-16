@@ -170,6 +170,18 @@ class StackExchangeDescriptiveAnalysis:
             )
         return pd.DataFrame(rows)
 
+    def columns_all(self, layer: str = "raw") -> pd.DataFrame:
+        """Describe all columns from all dataframes in one database layer."""
+        names = self.raw_datasets() if layer == "raw" else self.refined_datasets()
+        frames = []
+        for name in names:
+            frame = self.columns(name).copy()
+            frame.insert(0, "dataset", name)
+            frames.append(frame)
+        if not frames:
+            return pd.DataFrame()
+        return pd.concat(frames, ignore_index=True)
+
     def numeric_summary(self, dataset: str | Path) -> pd.DataFrame:
         """Return standard descriptive statistics for numeric columns."""
         df = self.load(dataset)
@@ -185,7 +197,7 @@ class StackExchangeDescriptiveAnalysis:
             return pd.DataFrame()
         return pd.concat([self.overview(name) for name in names], ignore_index=True)
 
-    def plot_cumulative_unanswered(self) -> tuple[Any, Any]:
+    def plot_cumulative_unanswered(self) -> Any:
         """Reproduce the line chart embedded in the legacy Excel workbook."""
         df = self.load(self.REFINED_DATASET).copy()
         df["Month Year"] = pd.to_datetime(df["Month Year"], errors="coerce")
@@ -209,4 +221,4 @@ class StackExchangeDescriptiveAnalysis:
         ax.legend()
         ax.grid(alpha=0.2)
         fig.tight_layout()
-        return fig, ax
+        return fig
