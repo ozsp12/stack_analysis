@@ -35,6 +35,6 @@ jobs:
         run: |
           jupyter nbconvert \
             --to notebook \
-            --execute notebooks/descriptive_analysis.ipynb \
+            --execute descriptive_analysis.ipynb \
             --ExecutePreprocessor.timeout=600 \
             --output /tmp/descriptive_analysis.ipynb
