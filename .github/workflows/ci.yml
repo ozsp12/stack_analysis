@@ -15,32 +15,32 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install openpyxl
-      - name: Inspect workbook
+      - run: python -m pip install openpyxl pandas
+      - name: Export workbook data
         run: |
           python - <<'PY'
           from pathlib import Path
+          import pandas as pd
           from openpyxl import load_workbook
-          path = Path('stack_exchange_analysis/analysis/cumulative-answers-questions-stackexchange.xlsx')
-          wb = load_workbook(path, data_only=False)
-          print('SHEETS', wb.sheetnames)
-          for ws in wb.worksheets:
-              print(f'SHEET {ws.title} rows={ws.max_row} cols={ws.max_column}')
-              for row in ws.iter_rows(min_row=1, max_row=min(ws.max_row, 12), values_only=True):
-                  print('ROW', row)
-              print('LAST_ROWS')
-              for row in ws.iter_rows(min_row=max(1, ws.max_row-4), max_row=ws.max_row, values_only=True):
-                  print('ROW', row)
-              print('CHARTS', len(ws._charts))
-              for i, chart in enumerate(ws._charts, 1):
-                  print('CHART', i, type(chart).__name__)
-                  try:
-                      print('TITLE', chart.title.tx.rich.p[0].r[0].t)
-                  except Exception:
-                      print('TITLE', None)
-                  for j, ser in enumerate(chart.ser, 1):
-                      tx = getattr(ser, 'tx', None)
-                      cat = getattr(ser, 'cat', None) or getattr(ser, 'xVal', None)
-                      val = getattr(ser, 'val', None) or getattr(ser, 'yVal', None)
-                      print('SERIES', j, 'TX=', tx, 'CAT=', cat, 'VAL=', val)
+
+          source = Path('stack_exchange_analysis/analysis/cumulative-answers-questions-stackexchange.xlsx')
+          output = Path('cumulative-answers-questions-stackexchange.csv')
+          df = pd.read_excel(source, sheet_name='QueryResults')
+          df.to_csv(output, index=False, date_format='%Y-%m-%d')
+          print(df.head().to_string(index=False))
+          print(df.tail().to_string(index=False))
+          print('shape=', df.shape)
+
+          wb = load_workbook(source, data_only=False)
+          ws = wb['QueryResults']
+          for i, chart in enumerate(ws._charts, 1):
+              print('chart', i, type(chart).__name__)
+              for j, ser in enumerate(chart.ser, 1):
+                  print('series', j, 'title=', ser.tx.strRef.f if ser.tx and ser.tx.strRef else None,
+                        'categories=', ser.cat.numRef.f if ser.cat and ser.cat.numRef else None,
+                        'values=', ser.val.numRef.f if ser.val and ser.val.numRef else None)
           PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: workbook-export
+          path: cumulative-answers-questions-stackexchange.csv
