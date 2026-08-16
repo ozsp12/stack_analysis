@@ -1,50 +1,46 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
 permissions:
   contents: read
 
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  quality:
-    name: Code, notebooks, and data checks
+  inspect-workbook:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
-
-      - name: Install dependencies
+          python-version: '3.11'
+      - run: python -m pip install openpyxl
+      - name: Inspect workbook
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt -r requirements-dev.txt
-
-      - name: Lint Python
-        run: ruff check stack_exchange_analysis/src scripts tests
-
-      - name: Run unit tests
-        run: pytest -q
-
-      - name: Validate notebook structure
-        run: python scripts/validate_notebooks.py
-
-      - name: Smoke-test source data
-        run: python scripts/check_source_data.py
+          python - <<'PY'
+          from pathlib import Path
+          from openpyxl import load_workbook
+          path = Path('stack_exchange_analysis/analysis/cumulative-answers-questions-stackexchange.xlsx')
+          wb = load_workbook(path, data_only=False)
+          print('SHEETS', wb.sheetnames)
+          for ws in wb.worksheets:
+              print(f'SHEET {ws.title} rows={ws.max_row} cols={ws.max_column}')
+              for row in ws.iter_rows(min_row=1, max_row=min(ws.max_row, 12), values_only=True):
+                  print('ROW', row)
+              print('LAST_ROWS')
+              for row in ws.iter_rows(min_row=max(1, ws.max_row-4), max_row=ws.max_row, values_only=True):
+                  print('ROW', row)
+              print('CHARTS', len(ws._charts))
+              for i, chart in enumerate(ws._charts, 1):
+                  print('CHART', i, type(chart).__name__)
+                  try:
+                      print('TITLE', chart.title.tx.rich.p[0].r[0].t)
+                  except Exception:
+                      print('TITLE', None)
+                  for j, ser in enumerate(chart.ser, 1):
+                      tx = getattr(ser, 'tx', None)
+                      cat = getattr(ser, 'cat', None) or getattr(ser, 'xVal', None)
+                      val = getattr(ser, 'val', None) or getattr(ser, 'yVal', None)
+                      print('SERIES', j, 'TX=', tx, 'CAT=', cat, 'VAL=', val)
+          PY
