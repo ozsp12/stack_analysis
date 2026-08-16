@@ -1,0 +1,84 @@
+name: Notebook Execution
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**/*.ipynb"
+      - "analysis_scripts/**"
+      - "database/**"
+      - "requirements.txt"
+      - ".github/workflows/notebooks.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "**/*.ipynb"
+      - "analysis_scripts/**"
+      - "database/**"
+      - "requirements.txt"
+      - ".github/workflows/notebooks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      notebooks: ${{ steps.notebooks.outputs.notebooks }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: notebooks
+        name: Discover notebooks
+        shell: bash
+        run: |
+          notebooks=$(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          files = sorted(
+              str(path)
+              for path in Path('.').rglob('*.ipynb')
+              if '.ipynb_checkpoints' not in path.parts
+          )
+          print(json.dumps(files))
+          PY
+          )
+          echo "notebooks=$notebooks" >> "$GITHUB_OUTPUT"
+
+  execute:
+    needs: discover
+    if: needs.discover.outputs.notebooks != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        notebook: ${{ fromJSON(needs.discover.outputs.notebooks) }}
+
+    name: Execute ${{ matrix.notebook }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Execute notebook
+        run: |
+          mkdir -p /tmp/executed-notebooks
+          jupyter nbconvert \
+            --to notebook \
+            --execute "${{ matrix.notebook }}" \
+            --ExecutePreprocessor.timeout=900 \
+            --output "/tmp/executed-notebooks/$(basename '${{ matrix.notebook }}')"
