@@ -21,9 +21,9 @@ database/
 └── metadata/
     └── queries/  # SQL used to generate the datasets
 
-analysis_scripts/ # Reusable Python analysis classes
-notebooks/        # Thin notebooks that call the analysis classes
-bibliography/     # References
+analysis_scripts/          # Reusable Python analysis classes
+bibliography/              # References
+descriptive_analysis.ipynb # Descriptive analysis notebook
 ```
 
 The raw data are kept unchanged. Transformations and reusable analytical logic belong in `analysis_scripts/`.
@@ -32,7 +32,7 @@ The raw data are kept unchanged. Transformations and reusable analytical logic b
 
 The first analysis is a basic descriptive inspection of every dataframe: dimensions, columns, data types, missing values, duplicated rows, date coverage, cardinality, and simple numerical summaries.
 
-The notebook `notebooks/descriptive_analysis.ipynb` calls the class defined in `analysis_scripts/descriptive_analysis.py`.
+The notebook `descriptive_analysis.ipynb` calls the class defined in `analysis_scripts/descriptive_analysis.py`. Each analytical code cell contains one function call and produces one output, with a Markdown cell immediately before it explaining the function and its result.
 
 The refined dataset `cumulative-answers-questions-stackexchange` is available both as Excel and CSV. Its original Excel chart is reproduced in Python as two cumulative time series:
 
