@@ -82,3 +82,18 @@ jobs:
             --execute "${{ matrix.notebook }}" \
             --ExecutePreprocessor.timeout=900 \
             --output "/tmp/executed-notebooks/$(basename '${{ matrix.notebook }}')"
+
+      - name: Render HTML
+        run: |
+          mkdir -p /tmp/rendered-notebooks
+          jupyter nbconvert \
+            --to html \
+            "/tmp/executed-notebooks/$(basename '${{ matrix.notebook }}')" \
+            --output-dir /tmp/rendered-notebooks
+
+      - name: Upload rendered notebook
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-notebook-html
+          path: /tmp/rendered-notebooks/*.html
+          if-no-files-found: error
